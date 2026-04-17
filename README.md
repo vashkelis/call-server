@@ -242,4 +242,4 @@ See [docs/deployment.md](docs/deployment.md) for:
 
 ## License
 
-MIT
+[MIT](LICENSE)
