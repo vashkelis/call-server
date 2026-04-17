@@ -1,0 +1,59 @@
+# Prometheus configuration for CloudApp Voice Engine
+# Scrapes metrics from all services
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'cloudapp-local'
+    replica: '{{.ExternalURL}}'
+
+# Alertmanager configuration (placeholder for future use)
+alerting:
+  alertmanagers: []
+
+# Rule files (placeholder for future use)
+rule_files: []
+
+# Scrape configurations
+scrape_configs:
+  # Media-Edge service metrics
+  - job_name: 'media-edge'
+    static_configs:
+      - targets: ['media-edge:8080']
+        labels:
+          service: 'media-edge'
+          component: 'websocket-gateway'
+    metrics_path: /metrics
+    scrape_interval: 15s
+    scrape_timeout: 5s
+
+  # Orchestrator service metrics
+  - job_name: 'orchestrator'
+    static_configs:
+      - targets: ['orchestrator:8081']
+        labels:
+          service: 'orchestrator'
+          component: 'pipeline-coordinator'
+    metrics_path: /metrics
+    scrape_interval: 15s
+    scrape_timeout: 5s
+
+  # Provider Gateway metrics
+  - job_name: 'provider-gateway'
+    static_configs:
+      - targets: ['provider-gateway:9090']
+        labels:
+          service: 'provider-gateway'
+          component: 'ai-provider-proxy'
+    metrics_path: /metrics
+    scrape_interval: 15s
+    scrape_timeout: 5s
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          component: 'monitoring'

@@ -1,0 +1,30 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  ws_path: "/ws"
+
+redis:
+  addr: "localhost:6379"
+
+postgres:
+  dsn: "postgres://voiceengine:voiceengine@localhost:5432/voiceengine?sslmode=disable"
+
+providers:
+  default_asr: "mock"
+  default_llm: "openai_compatible"
+  default_tts: "mock"
+  llm:
+    openai_compatible:
+      base_url: "http://localhost:8000/v1"
+      api_key: ""
+      model: "meta-llama/Meta-Llama-3-8B-Instruct"
+      max_tokens: 512
+      temperature: 0.7
+
+observability:
+  log_level: "info"
+  metrics_port: 9090
+
+security:
+  max_session_duration_s: 3600
+  auth_enabled: false

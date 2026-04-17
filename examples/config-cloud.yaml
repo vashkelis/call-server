@@ -1,0 +1,38 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  ws_path: "/ws"
+
+redis:
+  addr: "localhost:6379"
+
+postgres:
+  dsn: "postgres://voiceengine:voiceengine@localhost:5432/voiceengine?sslmode=disable"
+
+providers:
+  default_asr: "google_speech"
+  default_llm: "groq"
+  default_tts: "google_tts"
+  asr:
+    google_speech:
+      credentials_path: "/secrets/google-credentials.json"
+      language_code: "en-US"
+  llm:
+    groq:
+      api_key: "${GROQ_API_KEY}"
+      model: "llama3-8b-8192"
+      max_tokens: 512
+      temperature: 0.7
+  tts:
+    google_tts:
+      credentials_path: "/secrets/google-credentials.json"
+      voice_name: "en-US-Neural2-F"
+      language_code: "en-US"
+
+observability:
+  log_level: "info"
+  metrics_port: 9090
+
+security:
+  max_session_duration_s: 3600
+  auth_enabled: true

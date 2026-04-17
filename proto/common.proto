@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package parlona.voice.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/parlona/cloudapp/pkg/contracts/v1";
+
+// Audio encoding formats
+enum AudioEncoding {
+  AUDIO_ENCODING_UNSPECIFIED = 0;
+  PCM16 = 1;
+  OPUS = 2;
+  G711_ULAW = 3;
+  G711_ALAW = 4;
+}
+
+// Error codes for provider errors
+enum ProviderErrorCode {
+  PROVIDER_ERROR_CODE_UNSPECIFIED = 0;
+  PROVIDER_ERROR_CODE_INTERNAL = 1;
+  PROVIDER_ERROR_CODE_INVALID_REQUEST = 2;
+  PROVIDER_ERROR_CODE_RATE_LIMITED = 3;
+  PROVIDER_ERROR_CODE_QUOTA_EXCEEDED = 4;
+  PROVIDER_ERROR_CODE_TIMEOUT = 5;
+  PROVIDER_ERROR_CODE_SERVICE_UNAVAILABLE = 6;
+  PROVIDER_ERROR_CODE_AUTHENTICATION = 7;
+  PROVIDER_ERROR_CODE_AUTHORIZATION = 8;
+  PROVIDER_ERROR_CODE_UNSUPPORTED_FORMAT = 9;
+  PROVIDER_ERROR_CODE_CANCELED = 10;
+}
+
+// Session context shared across all services
+message SessionContext {
+  string session_id = 1;
+  string turn_id = 2;
+  string generation_id = 3;
+  optional string tenant_id = 4;
+  string trace_id = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  map<string, string> options = 8;
+  string provider_name = 9;
+  string model_name = 10;
+}
+
+// Audio format specification
+message AudioFormat {
+  int32 sample_rate = 1;
+  int32 channels = 2;
+  AudioEncoding encoding = 3;
+}
+
+// Provider error details
+message ProviderError {
+  ProviderErrorCode code = 1;
+  string message = 2;
+  string provider_name = 3;
+  bool retriable = 4;
+  map<string, string> details = 5;
+}
+
+// Cancel request message
+message CancelRequest {
+  SessionContext session_context = 1;
+  string reason = 2;
+}
+
+// Cancel response message
+message CancelResponse {
+  bool acknowledged = 1;
+  string generation_id = 2;
+}
+
+// Provider capabilities
+message ProviderCapability {
+  bool supports_streaming_input = 1;
+  bool supports_streaming_output = 2;
+  bool supports_word_timestamps = 3;
+  bool supports_voices = 4;
+  bool supports_interruptible_generation = 5;
+  repeated int32 preferred_sample_rates = 6;
+  repeated string supported_codecs = 7;
+}
+
+// Health check request
+message HealthCheckRequest {
+  string service_name = 1;
+}
+
+// Health check response
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3;
+  }
+  ServingStatus status = 1;
+  string service_name = 2;
+  string version = 3;
+}
+
+// Timing metadata for tracking operation duration
+message TimingMetadata {
+  google.protobuf.Timestamp start_time = 1;
+  google.protobuf.Timestamp end_time = 2;
+  int64 duration_ms = 3;
+}

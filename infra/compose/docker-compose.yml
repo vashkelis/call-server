@@ -1,0 +1,163 @@
+# CloudApp Full Stack Docker Compose
+# This file defines the complete voice engine stack for local development
+
+version: "3.8"
+
+services:
+  # Media-Edge Service: WebSocket entry point for audio streams
+  media-edge:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.media-edge
+    container_name: cloudapp-media-edge
+    ports:
+      - "8080:8080"
+    environment:
+      - CLOUDAPP_SERVER_PORT=8080
+      - CLOUDAPP_REDIS_ADDR=redis:6379
+      - CLOUDAPP_POSTGRES_DSN=postgres://voiceengine:voiceengine@postgres:5432/voiceengine?sslmode=disable
+    env_file:
+      - .env.mock
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - voice-engine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Orchestrator Service: Pipeline coordination and state management
+  orchestrator:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.orchestrator
+    container_name: cloudapp-orchestrator
+    ports:
+      - "8081:8081"
+    environment:
+      - CLOUDAPP_SERVER_PORT=8081
+      - CLOUDAPP_SERVER_HOST=0.0.0.0
+      - CLOUDAPP_REDIS_ADDR=redis:6379
+      - CLOUDAPP_POSTGRES_DSN=postgres://voiceengine:voiceengine@postgres:5432/voiceengine?sslmode=disable
+      - PROVIDER_GATEWAY_ADDRESS=provider-gateway:50051
+    env_file:
+      - .env.mock
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      provider-gateway:
+        condition: service_healthy
+    networks:
+      - voice-engine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Provider Gateway: gRPC service for ASR/LLM/TTS providers
+  provider-gateway:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.provider-gateway
+    container_name: cloudapp-provider-gateway
+    ports:
+      - "50051:50051"
+    environment:
+      - PROVIDER_GATEWAY_SERVER__PORT=50051
+      - PROVIDER_GATEWAY_SERVER__HOST=0.0.0.0
+      - PROVIDER_GATEWAY_TELEMETRY__METRICS_PORT=9090
+    env_file:
+      - .env.mock
+    networks:
+      - voice-engine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost',50051)); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # Redis: Session state and caching
+  redis:
+    image: redis:7-alpine
+    container_name: cloudapp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - voice-engine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # PostgreSQL: Persistent storage for transcripts and session history
+  postgres:
+    image: postgres:16-alpine
+    container_name: cloudapp-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: voiceengine
+      POSTGRES_USER: voiceengine
+      POSTGRES_PASSWORD: voiceengine
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - voice-engine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voiceengine -d voiceengine"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Prometheus: Metrics collection and monitoring
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: cloudapp-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - voice-engine
+    restart: unless-stopped
+
+networks:
+  voice-engine:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
+  postgres-data:
+    driver: local
+  prometheus-data:
+    driver: local

@@ -1,0 +1,115 @@
+# CloudApp PostgreSQL Kubernetes Manifest
+# STUB: StatefulSet, Service, and PVC for PostgreSQL persistence
+# NOTE: For production, use a managed PostgreSQL service (RDS, Cloud SQL, etc.)
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: voice-engine
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: persistence
+    app.kubernetes.io/part-of: cloudapp
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/component: persistence
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_DB
+              value: "voiceengine"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: cloudapp-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cloudapp-secrets
+                  key: postgres-password
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - voiceengine
+                - -d
+                - voiceengine
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - voiceengine
+                - -d
+                - voiceengine
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            # STUB: Uncomment to mount init scripts
+            # - name: migrations
+            #   mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        # STUB: ConfigMap for database migrations
+        # - name: migrations
+        #   configMap:
+        #     name: cloudapp-migrations
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+        # STUB: Uncomment to specify storage class
+        # storageClassName: standard
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: voice-engine
+  labels:
+    app.kubernetes.io/name: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: postgres
+  selector:
+    app.kubernetes.io/name: postgres

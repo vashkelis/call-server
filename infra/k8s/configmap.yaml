@@ -1,0 +1,59 @@
+# CloudApp ConfigMap
+# STUB: Shared configuration for all services
+# NOTE: Update values before deploying to production.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudapp-config
+  namespace: voice-engine
+  labels:
+    app.kubernetes.io/name: cloudapp
+    app.kubernetes.io/component: config
+data:
+  # Server configuration
+  CLOUDAPP_SERVER_HOST: "0.0.0.0"
+  CLOUDAPP_SERVER_WS_PATH: "/ws"
+  CLOUDAPP_SERVER_READ_TIMEOUT: "30s"
+  CLOUDAPP_SERVER_WRITE_TIMEOUT: "30s"
+  CLOUDAPP_SERVER_MAX_CONNECTIONS: "1000"
+
+  # Redis configuration
+  CLOUDAPP_REDIS_ADDR: "redis:6379"
+  CLOUDAPP_REDIS_DB: "0"
+  CLOUDAPP_REDIS_KEY_PREFIX: "cloudapp:"
+
+  # Provider defaults
+  CLOUDAPP_PROVIDERS_DEFAULT_ASR: "mock"
+  CLOUDAPP_PROVIDERS_DEFAULT_LLM: "mock"
+  CLOUDAPP_PROVIDERS_DEFAULT_TTS: "mock"
+  CLOUDAPP_PROVIDERS_DEFAULT_VAD: "mock"
+
+  # Observability
+  CLOUDAPP_OBSERVABILITY_LOG_LEVEL: "info"
+  CLOUDAPP_OBSERVABILITY_LOG_FORMAT: "json"
+  CLOUDAPP_OBSERVABILITY_METRICS_PORT: "9090"
+  CLOUDAPP_OBSERVABILITY_OTEL_ENDPOINT: "otel-collector:4317"
+  CLOUDAPP_OBSERVABILITY_ENABLE_TRACING: "true"
+  CLOUDAPP_OBSERVABILITY_ENABLE_METRICS: "true"
+
+  # Security
+  CLOUDAPP_SECURITY_MAX_SESSION_DURATION: "3600"
+  CLOUDAPP_SECURITY_MAX_CHUNK_SIZE: "65536"
+  CLOUDAPP_SECURITY_AUTH_ENABLED: "false"
+
+  # Provider Gateway configuration
+  PROVIDER_GATEWAY_SERVER__HOST: "0.0.0.0"
+  PROVIDER_GATEWAY_SERVER__MAX_WORKERS: "10"
+  PROVIDER_GATEWAY_TELEMETRY__LOG_LEVEL: "INFO"
+---
+# STUB: ConfigMap for database migrations
+# Uncomment and apply to auto-run migrations on PostgreSQL startup
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: cloudapp-migrations
+#   namespace: voice-engine
+# data:
+#   001_initial_schema.sql: |
+#     -- Paste migration SQL here

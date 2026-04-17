@@ -1,0 +1,61 @@
+# Dockerfile for CloudApp Provider Gateway Service
+# Multi-stage build for Python gRPC service
+
+# Stage 1: Builder
+FROM python:3.11-slim AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /build
+
+# Copy requirements first for better caching
+COPY py/provider_gateway/requirements.txt ./
+
+# Install dependencies to a virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Stage 2: Runtime
+FROM python:3.11-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r cloudapp --gid=1000 && \
+    useradd -r -g cloudapp --uid=1000 cloudapp
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Set working directory
+WORKDIR /app
+
+# Copy application code
+COPY py/provider_gateway/app/ ./app/
+
+# Change ownership to non-root user
+RUN chown -R cloudapp:cloudapp /app
+
+# Switch to non-root user
+USER cloudapp
+
+# Expose gRPC port
+EXPOSE 50051
+
+# Health check (using Python to check gRPC health)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.connect(('localhost', 50051)); s.close()" || exit 1
+
+# Entrypoint
+ENTRYPOINT ["python", "-m", "app"]

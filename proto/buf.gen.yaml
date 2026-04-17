@@ -1,0 +1,26 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/parlona/cloudapp/pkg/contracts/v1
+    except:
+      - buf.build/googleapis/googleapis
+
+plugins:
+  # Go plugins
+  - plugin: go
+    out: ../go/pkg/contracts/v1
+    opt:
+      - paths=source_relative
+  - plugin: go-grpc
+    out: ../go/pkg/contracts/v1
+    opt:
+      - paths=source_relative
+
+  # Python plugins
+  - plugin: python
+    out: ../py/provider_gateway/app/grpc_api/generated
+  - plugin: pyi
+    out: ../py/provider_gateway/app/grpc_api/generated
+  - plugin: grpc_python
+    out: ../py/provider_gateway/app/grpc_api/generated

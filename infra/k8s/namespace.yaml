@@ -1,0 +1,13 @@
+# CloudApp Voice Engine Kubernetes Namespace
+# STUB: Basic namespace definition for the voice-engine stack
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: voice-engine
+  labels:
+    app.kubernetes.io/name: voice-engine
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/part-of: cloudapp
+  annotations:
+    description: "Namespace for CloudApp Voice Engine services"

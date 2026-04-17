@@ -1,0 +1,43 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  ws_path: "/ws"
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+
+postgres:
+  dsn: "postgres://voiceengine:voiceengine@localhost:5432/voiceengine?sslmode=disable"
+
+providers:
+  default_asr: "mock"
+  default_llm: "mock"
+  default_tts: "mock"
+  asr:
+    mock:
+      delay_ms: 100
+      transcript: "Hello, this is a test transcription."
+  llm:
+    mock:
+      delay_ms: 50
+      response: "I understand your request. Let me help you with that."
+  tts:
+    mock:
+      delay_ms: 30
+      sample_rate: 16000
+
+audio:
+  internal_sample_rate: 16000
+  default_profile: "telephony"
+
+observability:
+  log_level: "debug"
+  metrics_port: 9090
+  otel_endpoint: ""
+
+security:
+  max_session_duration_s: 3600
+  max_chunk_size_bytes: 32768
+  auth_enabled: false

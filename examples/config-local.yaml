@@ -1,0 +1,37 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  ws_path: "/ws"
+
+redis:
+  addr: "localhost:6379"
+
+postgres:
+  dsn: "postgres://voiceengine:voiceengine@localhost:5432/voiceengine?sslmode=disable"
+
+providers:
+  default_asr: "faster_whisper"
+  default_llm: "openai_compatible"
+  default_tts: "xtts"
+  asr:
+    faster_whisper:
+      model_size: "base"
+      device: "cpu"
+      compute_type: "int8"
+  llm:
+    openai_compatible:
+      base_url: "http://localhost:8000/v1"
+      model: "meta-llama/Meta-Llama-3-8B-Instruct"
+      max_tokens: 512
+  tts:
+    xtts:
+      server_url: "http://localhost:8001"
+      voice_id: "default"
+
+observability:
+  log_level: "debug"
+  metrics_port: 9090
+
+security:
+  max_session_duration_s: 3600
+  auth_enabled: false

@@ -1,0 +1,68 @@
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "tenant_id": "demo-tenant",
+  "transport_type": "websocket",
+  "providers": {
+    "asr": "mock",
+    "llm": "mock",
+    "tts": "mock"
+  },
+  "started_at": "2026-04-17T10:00:00Z",
+  "ended_at": "2026-04-17T10:02:30Z",
+  "turns": [
+    {
+      "index": 0,
+      "role": "user",
+      "content": "Hello, I'd like to make a reservation.",
+      "timestamp": "2026-04-17T10:00:05Z"
+    },
+    {
+      "index": 1,
+      "role": "assistant",
+      "content": "Hello! I'd be happy to help you with a reservation. What date and time works best for you?",
+      "spoken_text": "Hello! I'd be happy to help you with a reservation. What date and time works best for you?",
+      "was_interrupted": false,
+      "generation_id": "gen-001",
+      "timestamp": "2026-04-17T10:00:06Z"
+    },
+    {
+      "index": 2,
+      "role": "user",
+      "content": "Tomorrow at 7 PM for two people.",
+      "timestamp": "2026-04-17T10:00:15Z"
+    },
+    {
+      "index": 3,
+      "role": "assistant",
+      "content": "I've noted a reservation for tomorrow at 7 PM for two. Could I get a name for the reservation?",
+      "spoken_text": "I've noted a reservation for tomorrow at 7 PM for two.",
+      "was_interrupted": true,
+      "generation_id": "gen-002",
+      "timestamp": "2026-04-17T10:00:16Z",
+      "interruption_note": "User interrupted before assistant finished asking for name"
+    },
+    {
+      "index": 4,
+      "role": "user",
+      "content": "Under the name Smith, please.",
+      "timestamp": "2026-04-17T10:00:22Z"
+    },
+    {
+      "index": 5,
+      "role": "assistant",
+      "content": "Got it, reservation under Smith for two at 7 PM tomorrow. Is there anything else I can help with?",
+      "spoken_text": "Got it, reservation under Smith for two at 7 PM tomorrow. Is there anything else I can help with?",
+      "was_interrupted": false,
+      "generation_id": "gen-003",
+      "timestamp": "2026-04-17T10:00:23Z"
+    }
+  ],
+  "metrics": {
+    "total_turns": 6,
+    "interruptions": 1,
+    "avg_asr_latency_ms": 120,
+    "avg_llm_ttft_ms": 85,
+    "avg_tts_first_chunk_ms": 45,
+    "avg_server_ttfa_ms": 250
+  }
+}

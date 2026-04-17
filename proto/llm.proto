@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package parlona.voice.v1;
+
+import "common.proto";
+
+option go_package = "github.com/parlona/cloudapp/pkg/contracts/v1";
+
+// LLM Service for language model generation
+service LLMService {
+  // Server streaming for prompt input and token output
+  rpc StreamGenerate(LLMRequest) returns (stream LLMResponse);
+
+  // Cancel an ongoing generation
+  rpc Cancel(CancelRequest) returns (CancelResponse);
+
+  // Get provider capabilities
+  rpc GetCapabilities(CapabilityRequest) returns (ProviderCapability);
+}
+
+// Request for LLM capability (reused from asr.proto)
+message CapabilityRequest {
+  string provider_name = 1;
+}
+
+// Chat message for LLM conversation
+message ChatMessage {
+  string role = 1;
+  string content = 2;
+}
+
+// Token usage metadata
+message UsageMetadata {
+  int32 prompt_tokens = 1;
+  int32 completion_tokens = 2;
+  int32 total_tokens = 3;
+}
+
+// LLM request containing conversation messages
+message LLMRequest {
+  SessionContext session_context = 1;
+  repeated ChatMessage messages = 2;
+  int32 max_tokens = 3;
+  float temperature = 4;
+  float top_p = 5;
+  repeated string stop_sequences = 6;
+  map<string, string> provider_options = 7;
+}
+
+// LLM response containing generated tokens
+message LLMResponse {
+  SessionContext session_context = 1;
+  string token = 2;
+  bool is_final = 3;
+  string finish_reason = 4;
+  UsageMetadata usage = 5;
+  TimingMetadata timing = 6;
+}

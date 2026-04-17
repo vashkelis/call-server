@@ -1,0 +1,91 @@
+# CloudApp Orchestrator Service Kubernetes Manifest
+# STUB: Deployment and Service for the pipeline orchestrator
+# NOTE: This is a template stub. Update image references and resource limits before deploying to production.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchestrator
+  namespace: voice-engine
+  labels:
+    app.kubernetes.io/name: orchestrator
+    app.kubernetes.io/component: pipeline-coordinator
+    app.kubernetes.io/part-of: cloudapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: orchestrator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: orchestrator
+        app.kubernetes.io/component: pipeline-coordinator
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8081"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: orchestrator
+          # TODO: Replace with actual image registry
+          image: cloudapp/orchestrator:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8081
+              protocol: TCP
+          env:
+            - name: CLOUDAPP_SERVER_PORT
+              value: "8081"
+            - name: CLOUDAPP_SERVER_HOST
+              value: "0.0.0.0"
+            - name: CLOUDAPP_REDIS_ADDR
+              value: "redis:6379"
+            - name: CLOUDAPP_POSTGRES_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudapp-secrets
+                  key: postgres-dsn
+            - name: PROVIDER_GATEWAY_ADDRESS
+              value: "provider-gateway:50051"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orchestrator
+  namespace: voice-engine
+  labels:
+    app.kubernetes.io/name: orchestrator
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: orchestrator

@@ -1,0 +1,107 @@
+# CloudApp Provider Gateway Kubernetes Manifest
+# STUB: Deployment and Service for the gRPC AI provider gateway
+# NOTE: This is a template stub. GPU resources are commented out - uncomment for local TTS/ASR models.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: provider-gateway
+  namespace: voice-engine
+  labels:
+    app.kubernetes.io/name: provider-gateway
+    app.kubernetes.io/component: ai-provider-proxy
+    app.kubernetes.io/part-of: cloudapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: provider-gateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: provider-gateway
+        app.kubernetes.io/component: ai-provider-proxy
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: provider-gateway
+          # TODO: Replace with actual image registry
+          image: cloudapp/provider-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          env:
+            - name: PROVIDER_GATEWAY_SERVER__PORT
+              value: "50051"
+            - name: PROVIDER_GATEWAY_SERVER__HOST
+              value: "0.0.0.0"
+            - name: PROVIDER_GATEWAY_TELEMETRY__METRICS_PORT
+              value: "9090"
+            # Provider-specific config loaded from ConfigMap or Secrets
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cloudapp-secrets
+                  key: groq-api-key
+                  optional: true
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+            # STUB: Uncomment for GPU-accelerated providers (local ASR/TTS)
+            # nvidia.com/gpu: 1  # Requires NVIDIA GPU operator
+          livenessProbe:
+            tcpSocket:
+              port: 50051
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 50051
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # STUB: Uncomment to mount Google Cloud credentials
+          # volumeMounts:
+          #   - name: google-credentials
+          #     mountPath: /secrets
+          #     readOnly: true
+      # volumes:
+      #   - name: google-credentials
+      #     secret:
+      #       secretName: google-cloud-credentials
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: provider-gateway
+  namespace: voice-engine
+  labels:
+    app.kubernetes.io/name: provider-gateway
+spec:
+  type: ClusterIP
+  ports:
+    - port: 50051
+      targetPort: 50051
+      protocol: TCP
+      name: grpc
+    - port: 9090
+      targetPort: 9090
+      protocol: TCP
+      name: metrics
+  selector:
+    app.kubernetes.io/name: provider-gateway

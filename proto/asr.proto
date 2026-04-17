@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package parlona.voice.v1;
+
+import "common.proto";
+
+option go_package = "github.com/parlona/cloudapp/pkg/contracts/v1";
+
+// ASR Service for automatic speech recognition
+service ASRService {
+  // Bidirectional streaming for audio input and transcript output
+  rpc StreamingRecognize(stream ASRRequest) returns (stream ASRResponse);
+
+  // Cancel an ongoing recognition
+  rpc Cancel(CancelRequest) returns (CancelResponse);
+
+  // Get provider capabilities
+  rpc GetCapabilities(CapabilityRequest) returns (ProviderCapability);
+}
+
+// Request for ASR capability
+message CapabilityRequest {
+  string provider_name = 1;
+}
+
+// ASR request containing audio chunks
+message ASRRequest {
+  SessionContext session_context = 1;
+  bytes audio_chunk = 2;
+  AudioFormat audio_format = 3;
+  string language_hint = 4;
+  bool is_final = 5;
+}
+
+// Word-level timestamp
+message WordTimestamp {
+  string word = 1;
+  int64 start_ms = 2;
+  int64 end_ms = 3;
+}
+
+// ASR response containing transcripts
+message ASRResponse {
+  SessionContext session_context = 1;
+  string transcript = 2;
+  bool is_partial = 3;
+  bool is_final = 4;
+  float confidence = 5;
+  string language = 6;
+  repeated WordTimestamp word_timestamps = 7;
+  TimingMetadata timing = 8;
+}

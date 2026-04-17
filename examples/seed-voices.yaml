@@ -1,0 +1,28 @@
+voices:
+  - id: professional_female
+    name: "Professional Female"
+    provider: google_tts
+    voice_name: "en-US-Neural2-F"
+    language: "en-US"
+    description: "Clear, professional female voice for business use"
+
+  - id: friendly_male
+    name: "Friendly Male"
+    provider: google_tts
+    voice_name: "en-US-Neural2-D"
+    language: "en-US"
+    description: "Warm, friendly male voice for general use"
+
+  - id: npc_gruff
+    name: "NPC Gruff"
+    provider: xtts
+    voice_id: "gruff_male"
+    language: "en"
+    description: "Deep, gruff voice for fantasy NPC characters"
+
+  - id: mock_default
+    name: "Mock Default"
+    provider: mock
+    voice_id: "default"
+    language: "en"
+    description: "Default mock voice for testing (sine wave)"

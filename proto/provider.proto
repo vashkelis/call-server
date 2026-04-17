@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package parlona.voice.v1;
+
+import "common.proto";
+
+option go_package = "github.com/parlona/cloudapp/pkg/contracts/v1";
+
+// Provider types
+enum ProviderType {
+  PROVIDER_TYPE_UNSPECIFIED = 0;
+  ASR = 1;
+  LLM = 2;
+  TTS = 3;
+  VAD = 4;
+}
+
+// Provider status
+enum ProviderStatus {
+  PROVIDER_STATUS_UNSPECIFIED = 0;
+  AVAILABLE = 1;
+  UNAVAILABLE = 2;
+  DEGRADED = 3;
+}
+
+// Provider Service for management and discovery
+service ProviderService {
+  // List available providers by type
+  rpc ListProviders(ListProvidersRequest) returns (ListProvidersResponse);
+
+  // Get detailed info about a specific provider
+  rpc GetProviderInfo(GetProviderInfoRequest) returns (ProviderInfo);
+
+  // Health check for provider service
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// Request to list providers
+message ListProvidersRequest {
+  ProviderType provider_type = 1;
+}
+
+// Provider information
+message ProviderInfo {
+  string name = 1;
+  ProviderType provider_type = 2;
+  string version = 3;
+  ProviderCapability capabilities = 4;
+  ProviderStatus status = 5;
+  map<string, string> metadata = 6;
+}
+
+// Response containing list of providers
+message ListProvidersResponse {
+  repeated ProviderInfo providers = 1;
+}
+
+// Request for specific provider info
+message GetProviderInfoRequest {
+  string provider_name = 1;
+  ProviderType provider_type = 2;
+}
