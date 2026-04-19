@@ -115,7 +115,11 @@ CloudApp/
 # Clone the repository
 cd /Users/vash/Dev/Parlona/CloudApp
 
-# Start all services with mock providers
+# Option 1: Use the convenience script (recommended)
+chmod +x scripts/run-local.sh
+./scripts/run-local.sh
+
+# Option 2: Manual Docker Compose
 cd infra/compose
 docker-compose --env-file .env.mock up --build
 
@@ -124,12 +128,17 @@ docker-compose --env-file .env.mock up --build
 # - Orchestrator: http://localhost:8081
 # - Provider Gateway: localhost:50051
 # - Redis: localhost:6379
+# - PostgreSQL: localhost:5432
 # - Prometheus: http://localhost:9090
 ```
 
 ### Run WebSocket Client Example
 
 ```bash
+# Create and activate virtual environment (recommended)
+python3 -m venv .venv
+source .venv/bin/activate
+
 # Install dependencies
 pip install websockets
 
