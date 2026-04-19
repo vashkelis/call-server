@@ -1,4 +1,3 @@
-package contracts
 // Package contracts provides internal Go type definitions that mirror the protobuf messages.
 // These types are used until proper proto generation is set up.
 package contracts
@@ -39,17 +38,17 @@ func (e AudioEncoding) String() string {
 type ProviderErrorCode int32
 
 const (
-	ProviderErrorCodeUnspecified       ProviderErrorCode = 0
-	ProviderErrorCodeInternal          ProviderErrorCode = 1
-	ProviderErrorCodeInvalidRequest    ProviderErrorCode = 2
-	ProviderErrorCodeRateLimited       ProviderErrorCode = 3
-	ProviderErrorCodeQuotaExceeded     ProviderErrorCode = 4
-	ProviderErrorCodeTimeout           ProviderErrorCode = 5
+	ProviderErrorCodeUnspecified        ProviderErrorCode = 0
+	ProviderErrorCodeInternal           ProviderErrorCode = 1
+	ProviderErrorCodeInvalidRequest     ProviderErrorCode = 2
+	ProviderErrorCodeRateLimited        ProviderErrorCode = 3
+	ProviderErrorCodeQuotaExceeded      ProviderErrorCode = 4
+	ProviderErrorCodeTimeout            ProviderErrorCode = 5
 	ProviderErrorCodeServiceUnavailable ProviderErrorCode = 6
-	ProviderErrorCodeAuthentication    ProviderErrorCode = 7
-	ProviderErrorCodeAuthorization     ProviderErrorCode = 8
-	ProviderErrorCodeUnsupportedFormat ProviderErrorCode = 9
-	ProviderErrorCodeCanceled          ProviderErrorCode = 10
+	ProviderErrorCodeAuthentication     ProviderErrorCode = 7
+	ProviderErrorCodeAuthorization      ProviderErrorCode = 8
+	ProviderErrorCodeUnsupportedFormat  ProviderErrorCode = 9
+	ProviderErrorCodeCanceled           ProviderErrorCode = 10
 )
 
 // String returns the string representation of the error code.
@@ -123,28 +122,28 @@ type CancelRequest struct {
 
 // CancelResponse is returned after a cancel request.
 type CancelResponse struct {
-	Acknowledged  bool   `json:"acknowledged"`
-	GenerationID  string `json:"generation_id"`
+	Acknowledged bool   `json:"acknowledged"`
+	GenerationID string `json:"generation_id"`
 }
 
 // ProviderCapability describes the capabilities of a provider.
 type ProviderCapability struct {
-	SupportsStreamingInput       bool     `json:"supports_streaming_input"`
-	SupportsStreamingOutput      bool     `json:"supports_streaming_output"`
-	SupportsWordTimestamps       bool     `json:"supports_word_timestamps"`
-	SupportsVoices               bool     `json:"supports_voices"`
-	SupportsInterruptibleGeneration bool  `json:"supports_interruptible_generation"`
-	PreferredSampleRates         []int32  `json:"preferred_sample_rates,omitempty"`
-	SupportedCodecs              []string `json:"supported_codecs,omitempty"`
+	SupportsStreamingInput          bool     `json:"supports_streaming_input"`
+	SupportsStreamingOutput         bool     `json:"supports_streaming_output"`
+	SupportsWordTimestamps          bool     `json:"supports_word_timestamps"`
+	SupportsVoices                  bool     `json:"supports_voices"`
+	SupportsInterruptibleGeneration bool     `json:"supports_interruptible_generation"`
+	PreferredSampleRates            []int32  `json:"preferred_sample_rates,omitempty"`
+	SupportedCodecs                 []string `json:"supported_codecs,omitempty"`
 }
 
 // ServingStatus represents the health status of a service.
 type ServingStatus int32
 
 const (
-	ServingStatusUnknown       ServingStatus = 0
-	ServingStatusServing       ServingStatus = 1
-	ServingStatusNotServing    ServingStatus = 2
+	ServingStatusUnknown        ServingStatus = 0
+	ServingStatusServing        ServingStatus = 1
+	ServingStatusNotServing     ServingStatus = 2
 	ServingStatusServiceUnknown ServingStatus = 3
 )
 
@@ -162,7 +161,7 @@ type HealthCheckResponse struct {
 
 // TimingMetadata tracks operation timing.
 type TimingMetadata struct {
-	StartTime   time.Time `json:"start_time"`
-	EndTime     time.Time `json:"end_time"`
-	DurationMs  int64     `json:"duration_ms"`
+	StartTime  time.Time `json:"start_time"`
+	EndTime    time.Time `json:"end_time"`
+	DurationMs int64     `json:"duration_ms"`
 }

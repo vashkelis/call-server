@@ -21,11 +21,12 @@ COPY go/ ./
 
 # Build the binary
 # CGO_ENABLED=0 for static binary, -ldflags for smaller size
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+# GOARCH is automatically detected from the build platform
+RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags="-w -s -X main.version=$(git describe --tags --always 2>/dev/null || echo 'dev') \
     -X main.commit=$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown') \
     -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-    -o /build/media-edge \
+    -o /build/bin/media-edge \
     ./media-edge/cmd/main.go
 
 # Stage 2: Runtime
@@ -42,7 +43,7 @@ RUN addgroup -g 1000 -S cloudapp && \
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /build/media-edge /app/media-edge
+COPY --from=builder /build/bin/media-edge /app/media-edge
 
 # Change ownership to non-root user
 RUN chown -R cloudapp:cloudapp /app
