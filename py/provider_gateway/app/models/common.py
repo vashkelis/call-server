@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AudioEncoding(str, Enum):
@@ -26,6 +26,8 @@ class AudioFormat(BaseModel):
 
 class SessionContext(BaseModel):
     """Session context shared across all services."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     session_id: str = Field(default="", description="Unique session identifier")
     turn_id: str = Field(default="", description="Turn identifier within session")
