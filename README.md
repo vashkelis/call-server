@@ -13,8 +13,8 @@ A production-grade, real-time voice conversation platform built with Go and Pyth
                                                                                │ gRPC
                                                                                ▼
                                                                       ┌─────────────────┐
-                                                                      │ Provider Gateway │
-                                                                      │    (Python)      │
+                                                                      │ Provider Gateway│
+                                                                    │    (Python)     │
                                                                       └────────┬────────┘
                                                                                │
                     ┌──────────────────────────────────────────────────────────┼──────────┐
