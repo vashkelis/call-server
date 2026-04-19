@@ -19,7 +19,7 @@ import base64
 import json
 import sys
 import wave
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import websockets
@@ -31,7 +31,7 @@ def create_session_start_event(session_id: str) -> dict:
     return {
         "event": "session.start",
         "session_id": session_id,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         "audio_format": {
             "sample_rate": 16000,
             "channels": 1,
@@ -46,7 +46,7 @@ def create_audio_chunk_event(session_id: str, audio_data: bytes, is_final: bool 
     return {
         "event": "audio.chunk",
         "session_id": session_id,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         "audio": base64.b64encode(audio_data).decode('utf-8'),
         "is_final": is_final
     }
@@ -57,7 +57,7 @@ def create_session_stop_event(session_id: str) -> dict:
     return {
         "event": "session.stop",
         "session_id": session_id,
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z"
     }
 
 
@@ -66,7 +66,7 @@ def create_interrupt_event(session_id: str) -> dict:
     return {
         "event": "input.interrupt",
         "session_id": session_id,
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z"
     }
 
 
@@ -233,6 +233,11 @@ async def run_client(
             except asyncio.CancelledError:
                 pass
                 
+    except ConnectionClosed as e:
+        if e.code == 1000:
+            print("[Session Complete]")
+        else:
+            print(f"[Connection Closed] Code: {e.code}, Reason: {e.reason}")
     except websockets.exceptions.InvalidURI:
         print(f"Error: Invalid WebSocket URI: {server_url}")
         sys.exit(1)

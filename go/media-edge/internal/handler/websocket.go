@@ -514,6 +514,13 @@ func (h *WebSocketHandler) cleanupConnection(c *Connection) {
 		handler.Stop()
 	}
 
+	// Send WebSocket close frame before closing the connection
+	c.conn.WriteControl(
+		websocket.CloseMessage,
+		websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+		time.Now().Add(5*time.Second),
+	)
+
 	// Close connection
 	c.conn.Close()
 

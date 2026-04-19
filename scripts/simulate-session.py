@@ -28,7 +28,7 @@ import random
 import sys
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum, auto
 from typing import Dict, List, Optional, Callable
 
@@ -207,7 +207,7 @@ class SessionSimulator:
         event = {
             "event": event_type,
             "session_id": self.session_id,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             **kwargs
         }
         return event
