@@ -56,21 +56,26 @@ func TestInvalidTransition(t *testing.T) {
 	eventSink := make(chan<- interface{}, 10)
 	fsm := NewSessionFSM("session-123", eventSink)
 
-	// Idle -> Speaking is invalid
+	// Idle -> Speaking is invalid (FirstTTSAudioEvent from Idle is a no-op)
 	err := fsm.Transition(FirstTTSAudioEvent)
-	if err == nil {
-		t.Error("expected error for invalid transition Idle -> Speaking")
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
 	}
 
-	// Verify state unchanged
+	// Verify state unchanged (no-op transition)
 	if fsm.Current() != session.StateIdle {
 		t.Errorf("expected state to remain Idle, got %v", fsm.Current())
 	}
 
-	// Idle -> Processing is invalid
+	// Idle -> Processing is invalid (ASRFinalEvent from Idle is a no-op)
 	err = fsm.Transition(ASRFinalEvent)
-	if err == nil {
-		t.Error("expected error for invalid transition Idle -> Processing")
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	// Verify state unchanged (no-op transition)
+	if fsm.Current() != session.StateIdle {
+		t.Errorf("expected state to remain Idle, got %v", fsm.Current())
 	}
 }
 

@@ -171,7 +171,8 @@ func (fsm *SessionFSM) resolveTargetState(event EventType) session.SessionState 
 		}
 
 	case SpeechEndEvent, ASRFinalEvent:
-		if fsm.currentState == session.StateListening {
+		if fsm.currentState == session.StateListening ||
+			fsm.currentState == session.StateInterrupted {
 			return session.StateProcessing
 		}
 

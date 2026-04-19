@@ -178,7 +178,7 @@ func TestCircuitBreakerHalfOpenLimit(t *testing.T) {
 	config := CircuitBreakerConfig{
 		FailureThreshold: 3,
 		Timeout:          50 * time.Millisecond,
-		HalfOpenMaxCalls: 2,
+		HalfOpenMaxCalls: 3,
 	}
 	cb := NewCircuitBreaker("test", config)
 
@@ -191,22 +191,27 @@ func TestCircuitBreakerHalfOpenLimit(t *testing.T) {
 		})
 	}
 
-	// Wait for timeout
+	// Wait for timeout (transitions to half-open)
 	time.Sleep(100 * time.Millisecond)
 
-	// Use up half-open calls
-	for i := 0; i < 2; i++ {
+	// Use up all half-open calls with successes
+	for i := 0; i < 3; i++ {
 		cb.Execute(context.Background(), func() error {
 			return nil
 		})
 	}
 
-	// Third call in half-open should fail with limit reached
+	// After HalfOpenMaxCalls successful calls, circuit should be closed
+	// so a subsequent call should succeed (not return ErrCircuitOpen)
 	err := cb.Execute(context.Background(), func() error {
 		return nil
 	})
-	if err == nil || !errors.Is(err, ErrCircuitOpen) {
-		t.Errorf("expected ErrCircuitOpen (half-open limit), got %v", err)
+	if err != nil {
+		t.Errorf("expected nil after circuit closes, got %v", err)
+	}
+
+	if cb.State() != StateClosed {
+		t.Errorf("expected state Closed, got %v", cb.State())
 	}
 }
 

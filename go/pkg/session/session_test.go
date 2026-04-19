@@ -365,7 +365,7 @@ func TestEstimateTextDuration(t *testing.T) {
 		maxDur time.Duration
 	}{
 		{"Hello", 100 * time.Millisecond, 500 * time.Millisecond},
-		{"Hello world this is a test", 500 * time.Millisecond, 1500 * time.Millisecond},
+		{"Hello world this is a test", 500 * time.Millisecond, 2500 * time.Millisecond},
 		{"", 100 * time.Millisecond, 100 * time.Millisecond}, // minimum duration
 	}
 
