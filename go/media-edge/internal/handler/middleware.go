@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"runtime/debug"
 	"strings"
@@ -201,6 +203,8 @@ func TimeoutMiddleware(timeout time.Duration) Middleware {
 }
 
 // responseWriter wraps http.ResponseWriter to capture status code.
+// It preserves the http.Hijacker interface (required for WebSocket upgrades)
+// by delegating Hijack to the underlying ResponseWriter when available.
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode int
@@ -222,6 +226,17 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 		rw.WriteHeader(http.StatusOK)
 	}
 	return rw.ResponseWriter.Write(b)
+}
+
+// Hijack implements the http.Hijacker interface.
+// This is required for WebSocket upgrades to work through middleware.
+// If the underlying ResponseWriter does not implement http.Hijacker,
+// this returns an error.
+func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hijacker, ok := rw.ResponseWriter.(http.Hijacker); ok {
+		return hijacker.Hijack()
+	}
+	return nil, nil, fmt.Errorf("response writer does not implement http.Hijacker")
 }
 
 // contextKey is the type for context keys.
