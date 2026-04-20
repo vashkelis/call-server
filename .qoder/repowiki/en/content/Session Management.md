@@ -13,7 +13,19 @@
 - [postgres.go](file://go/orchestrator/internal/persistence/postgres.go)
 - [fsm.go](file://go/orchestrator/internal/statemachine/fsm.go)
 - [turn_manager.go](file://go/orchestrator/internal/statemachine/turn_manager.go)
+- [simulate-session.py](file://scripts/simulate-session.py)
+- [ws-client.py](file://scripts/ws-client.py)
+- [session-interruption.md](file://docs/session-interruption.md)
+- [testing.md](file://docs/testing.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive session lifecycle simulation capabilities with multiple audio patterns
+- Enhanced interruption scenarios with detailed metrics collection for performance analysis
+- Expanded multi-turn conversation simulation support
+- Added new WebSocket client for interactive testing
+- Updated testing documentation with simulation capabilities
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -21,14 +33,15 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Session Simulation Capabilities](#session-simulation-capabilities)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document explains CloudApp’s session management system with a focus on:
+This document explains CloudApp's session management system with a focus on:
 - Session state machine with states: Idle, Listening, Processing, Speaking, and Interrupted
 - Turn-based interaction flow and assistant turn tracking
 - Conversation history management and persistence
@@ -37,6 +50,8 @@ This document explains CloudApp’s session management system with a focus on:
 - PostgreSQL persistence stubs and schema design
 - Session isolation and multi-tenant handling
 - Session recovery mechanisms
+- **Enhanced simulation capabilities with multiple audio patterns and metrics collection**
+- **Multi-turn conversation simulation and interruption scenarios**
 - Examples of state transitions, interruption handling, and persistence patterns
 - Interfaces, data models, and performance considerations for high-concurrency scenarios
 
@@ -45,6 +60,7 @@ The session management system spans three layers:
 - Core session models and interfaces in the session package
 - Persistence layer with Redis-backed hot-state helpers and PostgreSQL persistence stubs
 - Orchestrator state machine and turn manager coordinating runtime behavior
+- **Enhanced simulation tools for comprehensive testing and performance analysis**
 
 ```mermaid
 graph TB
@@ -58,12 +74,21 @@ RS["Redis Session Store"]
 RP["Redis Hot-State Helpers"]
 PG["PostgreSQL Persistence Stub"]
 end
+subgraph "Simulation Tools"
+SS["Session Simulator<br/>(simulate-session.py)"]
+WS["WebSocket Client<br/>(ws-client.py)"]
+AP["Audio Patterns<br/>(Silence, Sine, Speech)"]
+MET["Metrics Collection<br/>(SessionMetrics)"]
+end
 S --> RS
 S --> RP
 ST --> S
 TM --> S
 RP --> RS
 PG -. "schema design" .- S
+SS --> WS
+SS --> AP
+SS --> MET
 ```
 
 **Diagram sources**
@@ -73,12 +98,16 @@ PG -. "schema design" .- S
 - [redis_store.go:12-36](file://go/pkg/session/redis_store.go#L12-L36)
 - [redis.go:13-36](file://go/orchestrator/internal/persistence/redis.go#L13-L36)
 - [postgres.go:13-30](file://go/orchestrator/internal/persistence/postgres.go#L13-L30)
+- [simulate-session.py:161-554](file://scripts/simulate-session.py#L161-L554)
+- [ws-client.py:1-331](file://scripts/ws-client.py#L1-L331)
 
 **Section sources**
 - [session.go:62-84](file://go/pkg/session/session.go#L62-L84)
 - [redis_store.go:12-36](file://go/pkg/session/redis_store.go#L12-L36)
 - [redis.go:13-36](file://go/orchestrator/internal/persistence/redis.go#L13-L36)
 - [postgres.go:13-30](file://go/orchestrator/internal/persistence/postgres.go#L13-L30)
+- [simulate-session.py:161-554](file://scripts/simulate-session.py#L161-L554)
+- [ws-client.py:1-331](file://scripts/ws-client.py#L1-L331)
 
 ## Core Components
 - Session: Encapsulates runtime state, identifiers, provider selections, profiles, and active turn. Thread-safe setters/getters and cloning support concurrent access.
@@ -89,6 +118,8 @@ PG -. "schema design" .- S
 - RedisSessionStore: Implements hot session persistence with TTL and metrics.
 - RedisPersistence: Adds fine-grained hot-state helpers for turns, speaking flag, playout position, generation IDs, and session state.
 - PostgresSessionStore and PostgresPersistence: Stubs with TODO markers and schema design comments.
+- **Session Simulator: Comprehensive simulation tool with multiple audio patterns and metrics collection**
+- **WebSocket Client: Interactive client for manual testing and debugging**
 
 **Section sources**
 - [session.go:62-249](file://go/pkg/session/session.go#L62-L249)
@@ -100,9 +131,11 @@ PG -. "schema design" .- S
 - [redis.go:13-317](file://go/orchestrator/internal/persistence/redis.go#L13-L317)
 - [postgres_store.go:10-93](file://go/pkg/session/postgres_store.go#L10-L93)
 - [postgres.go:13-196](file://go/orchestrator/internal/persistence/postgres.go#L13-L196)
+- [simulate-session.py:161-554](file://scripts/simulate-session.py#L161-L554)
+- [ws-client.py:1-331](file://scripts/ws-client.py#L1-L331)
 
 ## Architecture Overview
-The runtime orchestrator coordinates session state and turn flow using the state machine and turn manager. Hot-state data is stored in Redis for low-latency access and updates, while durable persistence is provided via PostgreSQL stubs with a defined schema.
+The runtime orchestrator coordinates session state and turn flow using the state machine and turn manager. Hot-state data is stored in Redis for low-latency access and updates, while durable persistence is provided via PostgreSQL stubs with a defined schema. **Enhanced simulation tools provide comprehensive testing capabilities with detailed metrics collection.**
 
 ```mermaid
 sequenceDiagram
@@ -427,7 +460,7 @@ Orchestrator->>RS : "Delete(sessionID)"
 
 #### Example: Interruption During Speech Synthesis
 - While speaking, if an interruption occurs:
-  - MarkInterrupted(playoutPosition) updates the turn’s interruption flag and cursor
+  - MarkInterrupted(playoutPosition) updates the turn's interruption flag and cursor
   - CommitSpokenText captures only the text corresponding to audio already sent
   - Transition to Interrupted and reset generation/speaking flags in RedisPersistence
 
@@ -445,11 +478,87 @@ Orchestrator->>RS : "Delete(sessionID)"
 - [redis_store.go:38-103](file://go/pkg/session/redis_store.go#L38-L103)
 - [postgres.go:40-81](file://go/orchestrator/internal/persistence/postgres.go#L40-L81)
 
+## Session Simulation Capabilities
+
+**Updated** Added comprehensive session lifecycle simulation capabilities with multiple audio patterns, interruption scenarios, multi-turn conversations, and detailed metrics collection for performance analysis.
+
+### Session Simulator
+The Session Simulator provides a comprehensive testing framework with the following capabilities:
+
+#### Audio Pattern Generation
+- **SilencePattern**: Generates pure silence audio for testing VAD detection
+- **SineWavePattern**: Creates configurable sine wave patterns for testing speech recognition
+- **SpeechPattern**: Generates synthetic speech-like audio with modulated noise for realistic testing
+
+#### Scenario Testing
+- **Full Session**: Complete lifecycle with silence → speech → silence phases
+- **Interruption**: Simulates user interruption during speech synthesis
+- **Sine Wave**: Tests with configurable frequency and duration
+- **Multi-turn**: Multiple back-and-forth conversation turns
+
+#### Metrics Collection
+Comprehensive performance metrics tracking:
+- Audio chunks sent and bytes transmitted
+- ASR partial and final transcripts received
+- LLM tokens processed
+- TTS audio chunks and bytes streamed
+- Interruption count and error tracking
+- Session duration calculations
+
+```mermaid
+flowchart TD
+SS["Session Simulator"] --> AP["Audio Patterns"]
+AP --> SP["SpeechPattern"]
+AP --> SIP["SilencePattern"]
+AP --> SWP["SineWavePattern"]
+SS --> SC["Scenario Execution"]
+SC --> FS["Full Session"]
+SC --> INT["Interruption"]
+SC --> MW["Multi-turn"]
+SC --> SW["Sine Wave"]
+SS --> MET["Metrics Collection"]
+MET --> AM["Audio Metrics"]
+MET --> ASRM["ASR Metrics"]
+MET --> LLM["LLM Metrics"]
+MET --> TTSM["TTS Metrics"]
+MET --> INTM["Interruption Metrics"]
+```
+
+**Diagram sources**
+- [simulate-session.py:161-554](file://scripts/simulate-session.py#L161-L554)
+
+**Section sources**
+- [simulate-session.py:161-554](file://scripts/simulate-session.py#L161-L554)
+
+### WebSocket Client
+The WebSocket Client provides interactive testing capabilities:
+- Real-time audio streaming with configurable sample rates
+- Synthetic audio generation for testing
+- WAV file playback support
+- Event monitoring and logging
+- Session lifecycle management
+
+**Section sources**
+- [ws-client.py:1-331](file://scripts/ws-client.py#L1-L331)
+
+### Enhanced Testing Framework
+Integration with existing testing infrastructure:
+- Session simulator complements unit tests with end-to-end scenarios
+- WebSocket client enables manual testing and debugging
+- Metrics collection supports performance analysis and optimization
+- Multi-turn conversation testing validates complex interaction flows
+
+**Section sources**
+- [testing.md:253-261](file://docs/testing.md#L253-L261)
+- [testing.md:228-251](file://docs/testing.md#L228-L251)
+
 ## Dependency Analysis
 - Session depends on contracts for audio format and chat messages.
 - RedisSessionStore depends on Redis client and JSON serialization.
 - RedisPersistence composes RedisSessionStore and uses Redis hashes for hot-state.
 - PostgreSQL persistence stubs depend on observability logger and schema comments.
+- **Session Simulator depends on websockets library and asyncio for asynchronous operation**
+- **WebSocket Client depends on websockets library for real-time communication**
 
 ```mermaid
 graph LR
@@ -460,6 +569,9 @@ RedisPersistence["RedisPersistence"] --> RedisStore
 RedisPersistence --> RedisClient
 PostgresPersistence["PostgresPersistence"] --> Logger["observability.Logger"]
 PostgresPersistence --> Contracts
+SessionSimulator["Session Simulator"] --> Websockets["websockets"]
+SessionSimulator --> Asyncio["asyncio"]
+WebSocketClient["WebSocket Client"] --> Websockets
 ```
 
 **Diagram sources**
@@ -467,12 +579,16 @@ PostgresPersistence --> Contracts
 - [redis_store.go:9](file://go/pkg/session/redis_store.go#L9)
 - [redis.go](file://go/orchestrator/internal/persistence/redis.go)
 - [postgres.go:8-10](file://go/orchestrator/internal/persistence/postgres.go#L8-L10)
+- [simulate-session.py:35](file://scripts/simulate-session.py#L35)
+- [ws-client.py:25](file://scripts/ws-client.py#L25)
 
 **Section sources**
 - [session.go:8](file://go/pkg/session/session.go#L8)
 - [redis_store.go:9](file://go/pkg/session/redis_store.go#L9)
 - [redis.go](file://go/orchestrator/internal/persistence/redis.go)
 - [postgres.go:8-10](file://go/orchestrator/internal/persistence/postgres.go#L8-L10)
+- [simulate-session.py:35](file://scripts/simulate-session.py#L35)
+- [ws-client.py:25](file://scripts/ws-client.py#L25)
 
 ## Performance Considerations
 - Concurrency: Session and AssistantTurn use read-write mutexes to guard mutable fields; getters return copies to prevent races.
@@ -481,8 +597,8 @@ PostgresPersistence --> Contracts
 - Serialization: JSON marshalling is straightforward; consider binary formats (e.g., protobuf) for higher throughput.
 - Scanning and listing: Redis SCAN with prefix enumerates active sessions efficiently.
 - PostgreSQL stub: Replace stubs with batched inserts and proper indexing for high-throughput durability.
-
-[No sources needed since this section provides general guidance]
+- **Simulation overhead: Session simulator introduces additional computational overhead for metrics collection and audio pattern generation**
+- **Real-time constraints: WebSocket clients must maintain real-time audio streaming without blocking the event loop**
 
 ## Troubleshooting Guide
 Common issues and remedies:
@@ -490,16 +606,19 @@ Common issues and remedies:
 - Session not found: Redis GET returns a not-found error; ensure session keys are prefixed consistently.
 - Interruption mismatches: Verify playout cursor alignment with audio bytes; recompute durations if timestamps are unavailable.
 - Persistence stubs: PostgreSQL operations are logged as stubs; deploy schema and implement persistence before enabling durable storage.
+- **Simulation timeouts: Session simulator may timeout if interruption events are not properly handled; ensure proper event processing**
+- **WebSocket connectivity: WebSocket client requires stable network connection; check firewall settings and server availability**
+- **Audio format issues: Ensure sample rate and encoding match between simulator and orchestrator configuration**
 
 **Section sources**
 - [state.go:78-79](file://go/pkg/session/state.go#L78-L79)
 - [redis_store.go:42-58](file://go/pkg/session/redis_store.go#L42-L58)
 - [postgres.go:24-30](file://go/orchestrator/internal/persistence/postgres.go#L24-L30)
+- [simulate-session.py:424-428](file://scripts/simulate-session.py#L424-L428)
+- [ws-client.py:236-253](file://scripts/ws-client.py#L236-L253)
 
 ## Conclusion
-CloudApp’s session management system combines a strict state machine, robust turn tracking, and a layered persistence strategy. Redis provides fast, ephemeral hot-state synchronization, while PostgreSQL stubs offer a clear migration path to durable storage. The design supports multi-tenancy, interruption handling, and recovery, with interfaces enabling easy substitution of implementations for high-concurrency deployments.
-
-[No sources needed since this section summarizes without analyzing specific files]
+CloudApp's session management system combines a strict state machine, robust turn tracking, and a layered persistence strategy. Redis provides fast, ephemeral hot-state synchronization, while PostgreSQL stubs offer a clear migration path to durable storage. The design supports multi-tenancy, interruption handling, and recovery, with interfaces enabling easy substitution of implementations for high-concurrency deployments. **Enhanced simulation capabilities provide comprehensive testing frameworks with detailed metrics collection, enabling thorough validation of session lifecycle scenarios and performance optimization.**
 
 ## Appendices
 
@@ -524,3 +643,26 @@ Allowed transitions:
 
 **Section sources**
 - [redis.go:40-278](file://go/orchestrator/internal/persistence/redis.go#L40-L278)
+
+### Appendix C: Session Simulation Scenarios
+Available simulation scenarios:
+- **full**: Complete session lifecycle with silence, speech, and silence phases
+- **interrupt**: Session with interruption at specified time point
+- **sine**: Sine wave audio pattern testing
+- **multi-turn**: Multiple conversation turns with inter-turn delays
+
+**Section sources**
+- [simulate-session.py:378-418](file://scripts/simulate-session.py#L378-L418)
+
+### Appendix D: Metrics Collection Reference
+SessionMetrics includes:
+- **Session identification and timing**: session_id, start_time, end_time, duration
+- **Audio metrics**: audio_chunks_sent, audio_bytes_sent
+- **ASR metrics**: asr_partials, asr_finals
+- **LLM metrics**: llm_tokens
+- **TTS metrics**: tts_chunks, tts_bytes
+- **Interruption metrics**: interruptions
+- **Error tracking**: errors
+
+**Section sources**
+- [simulate-session.py:53-89](file://scripts/simulate-session.py#L53-L89)
